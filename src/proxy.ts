@@ -1,7 +1,11 @@
 import type { NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession } from "@/lib/supabase/session";
 
-export async function middleware(request: NextRequest) {
+/**
+ * Konvensi Next.js 16 (pengganti middleware.ts).
+ * Menyegarkan sesi Supabase & menjaga rute /dashboard.
+ */
+export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
