@@ -2,12 +2,16 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, RotateCcw, Save } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/card";
 import { GPU_LIKERT_SCALE } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
-import { saveGpuAssessmentsAction, type AssessmentInput } from "./actions";
+import {
+  resetGpuAssessmentAction,
+  saveGpuAssessmentsAction,
+  type AssessmentInput,
+} from "./actions";
 import type { Gpu } from "@/lib/types";
 
 type TopVariableView = {
@@ -51,6 +55,23 @@ export function AssessmentMatrix({
 
   function setScore(gpuId: string, variableId: string, value: number) {
     setScores((prev) => ({ ...prev, [`${gpuId}:${variableId}`]: value }));
+  }
+
+  function resetGpu(gpu: Gpu) {
+    if (!window.confirm(`Hapus seluruh nilai assessment untuk "${gpu.name}"?`)) return;
+    setMessage(null);
+    startTransition(async () => {
+      const result = await resetGpuAssessmentAction(gpu.id);
+      if (result.ok) {
+        setScores((prev) => {
+          const next = { ...prev };
+          for (const variable of topVariables) delete next[`${gpu.id}:${variable.variable_id}`];
+          return next;
+        });
+        router.refresh();
+      }
+      setMessage({ tone: result.ok ? "success" : "error", text: result.message ?? "Selesai." });
+    });
   }
 
   function save() {
@@ -131,6 +152,17 @@ export function AssessmentMatrix({
                   <Badge tone={complete ? "emerald" : "amber"}>
                     {filled}/{topVariables.length}
                   </Badge>
+                  {filled > 0 ? (
+                    <button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      onClick={() => resetGpu(gpu)}
+                      disabled={pending}
+                      title="Hapus nilai assessment GPU ini"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" /> Reset
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
